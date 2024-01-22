@@ -1,0 +1,55 @@
+(* EBNF for 6502 Assembly *)
+(* This describes the grammar to follow for a 6502 assembly file *)
+program                     = {line};
+line                        = ([whitespace] [comment]) | 
+                              ([whitespace] [label] [whitespace] (instruction | directive) [whitespace] [comment]) | 
+                              ([whitespace] [constant] [comment]) newline+;
+constant                    = identifier [whitespace] "=" [whitespace] ('$' {hex_number} | {digit} | binary);
+label                       = identifier ":";
+instruction                 = mnemonic [whitespace] [operand];
+directive                   = "." directive_list whitespace {(literal_u8) | (address_u16 | address_u8) | identifier | expression};
+mnemonic                    = "ADC" | "AND" | "ASL" | "BCC" | "BCS" | "BEQ" |
+                              "BIT" | "BMI" | "BNE" | "BPL" | "BRK" | "BVC" |
+                              "BVS" | "CLC" | "CLD" | "CLI" | "CLV" | "CMP" |
+                              "CPX" | "CPY" | "DEC" | "DEX" | "DEY" | "EOR" |
+                              "INC" | "INX" | "INY" | "JMP" | "JSR" | "LDA" |
+                              "LDX" | "LDY" | "LSR" | "NOP" | "ORA" | "PHA" |
+                              "PHP" | "PLA" | "PLP" | "ROL" | "ROR" | "RTI" |
+                              "RTS" | "SBC" | "SEC" | "SED" | "SEI" | "STA" |
+                              "STX" | "STY" | "TAX" | "TAY" | "TSX" | "TXA" |
+                              "TXS" | "TYA";
+directive_list              = "word" | "org" | "byte" | "segment";
+operand                     = (address_modes | expression | identifier);
+address_modes               = immediate_mode | zero_page_mode | zero_page_y_mode | absolute_mode |
+                              absolute_x_mode | absolute_y_mode | indexed_indirect_x_mode |
+                              indirect_index_y_mode | accumalator_mode;
+immediate_mode              = literal_u8;
+zero_page_mode              = address_u8;
+zero_page_x_mode            = address_u8 [whitespace] "," [whitespace] "X";
+zero_page_y_mode            = address_u8 [whitespace] "," [whitespace] "Y";
+absolute_mode               = address_u16;
+absolute_x_mode             = address_u16 [whitespace] "," [whitespace] "X";
+absolute_y_mode             = address_u16 [whitespace] "," [whitespace] "Y";
+indexed_indirect_x_mode     = "(" [whitespace] address_u8 [whitespace] "," [whitespace] "X" [whitespace] ")";
+indirect_index_y_mode       = "(" [whitespace] address_u8 [whitespace] ")" [whitespace] "," [whitespace] "Y";
+accumalator_mode            = "A";
+literal_u16                 = "#$" hex_digit hex_digit hex_digit hex_digit [whitespace];
+address_u16                 = "$" hex_digit hex_digit hex_digit hex_digit;
+literal_u8                  = "#$" hex_digit hex_digit;
+address_u8                  = "$" hex_digit hex_digit;
+expression                  = term {low_precedence_operator term};
+term                        = factor {high_precedence_operator factor};
+factor                      = [whitespace] (expression_number | identifier | "(" expression ")") [whitespace];
+low_precedence_operator     = "+" | "-" | "|" | "&";
+high_precedence_operator    = "*" | "/" | "<<" | ">>";
+expression_number           = ('$' {hex_number} | {digit} | binary);
+comment                     = ";" any_char*;
+identifier                  = letter {letter | digit | "_"};
+hex_number                  = hex_digit {hex_digit};
+digit                       = ? 0-9 ?;
+hex_digit                   = ? hexadecimal digits ?;
+binary                      = '%' {(0 | 1)}
+letter                      = ? ASCII letters ?;
+newline                     = ? newline character(s) ?;
+any_char                    = ? any character excluding newline ?;
+whitespace                  = { ? space or tab character ? };
